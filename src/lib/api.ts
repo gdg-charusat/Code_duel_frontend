@@ -237,9 +237,10 @@ export const inviteApi = {
 // USER APIs
 // ============================================================================
 export const userApi = {
-  searchUsers: async (query: string) => {
+  searchUsers: async (query: string, signal?: AbortSignal) => {
     const response = await api.get<ApiResponse<UserSearchResult[]>>("/api/users/search", {
       params: { q: query },
+      signal,
     });
     return response.data;
   },

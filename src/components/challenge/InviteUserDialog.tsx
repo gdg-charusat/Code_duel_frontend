@@ -39,13 +39,15 @@ const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
   const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
   const [sendingId, setSendingId] = useState<string | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Clear pending debounce on unmount to prevent state updates on an unmounted component
+  // Cleanup on unmount: cancel pending debounce and any in-flight request
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      abortControllerRef.current?.abort();
     };
   }, []);
 
@@ -56,24 +58,36 @@ const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
       clearTimeout(searchTimeoutRef.current);
     }
 
+    // Abort any in-flight request from a previous search
+    abortControllerRef.current?.abort();
+
     if (value.trim().length < 2) {
       setResults([]);
       return;
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setIsSearching(true);
       try {
-        const response = await userApi.searchUsers(value.trim());
+        const response = await userApi.searchUsers(value.trim(), controller.signal);
         if (response.success && response.data) {
-          setResults(response.data as UserSearchResult[]);
+          setResults(response.data);
         } else {
           setResults([]);
         }
-      } catch {
-        setResults([]);
+      } catch (err: unknown) {
+        // Ignore AbortError — triggered intentionally when a newer search starts
+        if (!(err instanceof Error && err.name === "AbortError")) {
+          setResults([]);
+        }
       } finally {
-        setIsSearching(false);
+        // Only clear the searching flag if this is still the current request
+        if (abortControllerRef.current === controller) {
+          setIsSearching(false);
+        }
       }
     }, 400);
   };
@@ -149,7 +163,6 @@ const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
               <div
                 className="flex items-center justify-center py-8"
                 role="status"
-                aria-live="polite"
               >
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 <span className="sr-only">Searching for users…</span>
