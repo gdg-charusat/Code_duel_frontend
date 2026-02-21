@@ -72,16 +72,12 @@ const InviteRequests: React.FC = () => {
       } else {
         throw new Error(response.message || "Failed to respond to invite");
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (!isMountedRef.current) return;
-      const message =
-        (error as { response?: { data?: { message?: string } }; message?: string })
-          ?.response?.data?.message ??
-        (error as { message?: string })?.message ??
-        "Please try again.";
       toast({
         title: "Action failed",
-        description: message,
+        description:
+          error.response?.data?.message || error.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -92,30 +88,10 @@ const InviteRequests: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Challenge Invites
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div
-            className="flex items-center justify-center py-6"
-            role="status"
-            aria-live="polite"
-          >
-            <span className="sr-only">Loading challenge invites…</span>
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (invites.length === 0) {
+  // Return null while loading and when there are no pending invites.
+  // This prevents a visible flash of the card+spinner before we know whether
+  // there are any invites to show, keeping the dashboard clean.
+  if (isLoading || invites.length === 0) {
     return null;
   }
 

@@ -17,6 +17,7 @@ export interface Challenge {
   startDate: string;
   endDate: string;
   createdBy: string;
+  ownerId?: string;
   members: ChallengeMember[];
   isActive: boolean;
   isPrivate?: boolean;

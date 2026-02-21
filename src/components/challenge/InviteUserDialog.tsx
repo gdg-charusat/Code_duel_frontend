@@ -40,10 +40,13 @@ const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
   const [sendingId, setSendingId] = useState<string | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
-  // Cleanup on unmount: cancel pending debounce and any in-flight request
+  // Cleanup on unmount: cancel pending debounce, abort in-flight request, mark unmounted
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
@@ -78,7 +81,7 @@ const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
         } else {
           setResults([]);
         }
-      } catch (err: unknown) {
+      } catch (err: any) {
         // Ignore AbortError — triggered intentionally when a newer search starts
         if (!(err instanceof Error && err.name === "AbortError")) {
           setResults([]);
@@ -105,26 +108,26 @@ const InviteUserDialog: React.FC<InviteUserDialogProps> = ({
       } else {
         throw new Error(response.message || "Failed to send invite");
       }
-    } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { message?: string } }; message?: string })
-          ?.response?.data?.message ??
-        (error as { message?: string })?.message ??
-        "Please try again.";
+    } catch (error: any) {
       toast({
         title: "Failed to send invite",
-        description: message,
+        description:
+          error.response?.data?.message || error.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
-      setSendingId(null);
+      if (isMountedRef.current) setSendingId(null);
     }
   };
 
   const handleOpenChange = (value: boolean) => {
     if (!value) {
+      // Cancel any pending debounce and in-flight search when dialog closes
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      abortControllerRef.current?.abort();
       setQuery("");
       setResults([]);
+      setIsSearching(false);
       setInvitedIds(new Set());
     }
     onOpenChange(value);
