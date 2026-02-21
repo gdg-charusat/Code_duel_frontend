@@ -156,6 +156,7 @@ export const challengeApi = {
     penaltyAmount: number;
     startDate: string;
     endDate: string;
+    visibility: string;
   }) => {
     const response = await api.post<ApiResponse<ChallengeResponse>>(
       "/api/challenges",

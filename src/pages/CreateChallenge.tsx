@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Layout from "@/components/layout/Layout";
 import { useToast } from "@/hooks/use-toast";
 import { challengeApi } from "@/lib/api";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const CreateChallenge: React.FC = () => {
   const [name, setName] = useState("");
@@ -31,6 +32,7 @@ const CreateChallenge: React.FC = () => {
   const [penaltyAmount, setPenaltyAmount] = useState("5");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [visibility, setVisibility] = useState("PUBLIC");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -97,6 +99,7 @@ const CreateChallenge: React.FC = () => {
         penaltyAmount: parseInt(penaltyAmount),
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
+        visibility : visibility as "PUBLIC" | "PRIVATE",
       });
 
       if (response.success) {
@@ -262,6 +265,25 @@ const CreateChallenge: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Visibility Radio button */}
+              <div className="space-y-2">
+                <Label>Visibility</Label>
+                <RadioGroup value={visibility} onValueChange={setVisibility}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="PUBLIC" id="public" />
+                    <Label htmlFor="public" className="cursor-pointer">Public</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="PRIVATE" id="private" />
+                    <Label htmlFor="private" className="cursor-pointer">Private</Label>
+                  </div>
+                </RadioGroup>
+                <p className="text-xs text-muted-foreground">
+                  Public challenges are visible to all users. Private challenges are only visible to the owner and invited members.
+                </p>
+              </div>
+             
 
               <div className="flex gap-3 pt-4">
                 <Button
