@@ -25,6 +25,11 @@ import { useToast } from "@/hooks/use-toast";
 import { challengeApi } from "@/lib/api";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
+const getTodayString = () => {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+};
+
 const CreateChallenge: React.FC = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -62,10 +67,14 @@ const CreateChallenge: React.FC = () => {
 
     if (!startDate) {
       newErrors.startDate = "Start date is required";
+    } else if (startDate < getTodayString()) {
+      newErrors.startDate = "Start date cannot be in the past";
     }
 
     if (!endDate) {
       newErrors.endDate = "End date is required";
+    } else if (endDate < getTodayString()) {
+      newErrors.endDate = "End date cannot be in the past";
     }
 
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
@@ -246,6 +255,7 @@ const CreateChallenge: React.FC = () => {
                   <Input
                     id="startDate"
                     type="date"
+                    min={getTodayString()}
                     value={startDate}
                     min={today}
                     onChange={(e) => {
@@ -273,6 +283,7 @@ const CreateChallenge: React.FC = () => {
                   <Input
                     id="endDate"
                     type="date"
+                    min={startDate || getTodayString()}
                     value={endDate}
                     min={minEndDate}
                     disabled={!startDate}
