@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Flame, Target, DollarSign, Zap, Trophy, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
 import StatsCard from "@/components/common/StatsCard";
@@ -31,6 +31,8 @@ const Dashboard: React.FC = () => {
   const [challenges, setChallenges] = useState<any[]>([]);
   const [activityData, setActivityData] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDashboardData();
@@ -200,7 +202,8 @@ const Dashboard: React.FC = () => {
               description="Create or join a challenge to start competing with others and stay motivated!"
               action={{
                 label: "Create Challenge",
-                onClick: () => {},
+                onClick: () => {
+                  navigate("/create-challenge");},
               }}
             />
           )}
