@@ -11,14 +11,26 @@ export interface User {
 export interface Challenge {
   id: string;
   name: string;
-  dailyTarget: number;
-  difficulty: 'easy' | 'medium' | 'hard' | 'any';
+  description?: string;
+  minSubmissionsPerDay: number;
+  difficultyFilter?: string[] | null;
+  uniqueProblemConstraint?: boolean;
   penaltyAmount: number;
   startDate: string;
   endDate: string;
-  createdBy: string;
-  members: ChallengeMember[];
-  isActive: boolean;
+  status: "ACTIVE" | "PENDING" | "COMPLETED" | "CANCELLED" | string;
+  visibility?: "PUBLIC" | "PRIVATE" | string;
+  ownerId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  owner?: {
+    id: string;
+    username: string;
+  };
+  _count?: {
+    members: number;
+  };
+  members?: ChallengeMember[];
 }
 
 export interface ChallengeMember {

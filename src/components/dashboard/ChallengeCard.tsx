@@ -27,18 +27,32 @@ const difficultyColors = {
 };
 
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
-  const daysRemaining = Math.ceil(
-    (new Date(challenge.endDate).getTime() - new Date().getTime()) /
-      (1000 * 60 * 60 * 24)
+  const nowMs = Date.now();
+  const startMs = new Date(challenge.startDate).getTime();
+  const endMs = new Date(challenge.endDate).getTime();
+  const dayMs = 1000 * 60 * 60 * 24;
+
+  const totalDays = Math.max(1, Math.ceil((endMs - startMs) / dayMs));
+  const clampedNowMs = Math.min(Math.max(nowMs, startMs), endMs);
+  const elapsedDays = Math.max(0, Math.ceil((clampedNowMs - startMs) / dayMs));
+  const progress = Math.max(
+    0,
+    Math.min(100, Math.round((elapsedDays / totalDays) * 100))
   );
 
-  const totalDays = Math.ceil(
-    (new Date(challenge.endDate).getTime() -
-      new Date(challenge.startDate).getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
-
-  const progress = Math.round(((totalDays - daysRemaining) / totalDays) * 100);
+  const membersCount =
+    challenge.members?.length ?? challenge._count?.members ?? 0;
+  const getTimingLabel = () => {
+    if (nowMs < startMs) {
+      const startsIn = Math.max(0, Math.ceil((startMs - nowMs) / dayMs));
+      return `Starts in ${startsIn} day${startsIn === 1 ? "" : "s"}`;
+    }
+    if (nowMs > endMs) {
+      return "Ended";
+    }
+    const daysRemaining = Math.max(0, Math.ceil((endMs - nowMs) / dayMs));
+    return `${daysRemaining} day${daysRemaining === 1 ? "" : "s"} left`;
+  };
   const completedMembers =
     challenge.members?.filter((m) => m.status === "completed").length || 0;
 
@@ -118,12 +132,12 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>{daysRemaining} days left</span>
+              <span>{getTimingLabel()}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Users className="h-4 w-4" />
               <span>
-                {completedMembers}/{challenge.members?.length || 0} done
+                {completedMembers}/{membersCount} done
               </span>
             </div>
           </div>
@@ -148,9 +162,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
                 </AvatarFallback>
               </Avatar>
             ))}
-            {(challenge.members?.length || 0) > 5 && (
+            {membersCount > 5 && (
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-muted text-xs font-medium">
-                +{(challenge.members?.length || 0) - 5}
+                +{membersCount - 5}
               </div>
             )}
           </div>
