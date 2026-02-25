@@ -1,4 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from "axios";
+import { handleApiError, isAuthError } from "./errorHandler";
+import { logError } from "./logger";
 
 // API Base URL - Change this to your backend URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -26,17 +28,33 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor for centralized error handling
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Clear auth on 401
+    // Handle error using centralized error handler
+    const handledError = handleApiError(error);
+
+    // Log the error
+    logError(
+      `API Error: ${handledError.message}`,
+      {
+        url: error.config?.url,
+        method: error.config?.method,
+        statusCode: handledError.statusCode,
+        type: handledError.type,
+      },
+      error as any
+    );
+
+    // Handle auth errors - clear tokens and redirect
+    if (isAuthError(handledError)) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("user");
       window.location.href = "/login";
     }
-    return Promise.reject(error);
+
+    return Promise.reject(handledError);
   }
 );
 

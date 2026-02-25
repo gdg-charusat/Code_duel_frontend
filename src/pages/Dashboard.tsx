@@ -11,12 +11,12 @@ import ChallengeCard from "@/components/dashboard/ChallengeCard";
 import EmptyState from "@/components/common/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
 import { dashboardApi, challengeApi } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useApiError } from "@/hooks/useApiError";
 import { Stats } from "@/types";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { handleError } = useApiError();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<Stats>({
     todayStatus: "pending",
@@ -92,12 +92,7 @@ const Dashboard: React.FC = () => {
         setChallenges(challengesResponse.data);
       }
     } catch (error: unknown) {
-      console.error("Failed to load dashboard:", error);
-      toast({
-        title: "Failed to load dashboard",
-        description: "Please refresh the page to try again.",
-        variant: "destructive",
-      });
+      handleError(error, "Dashboard Loading");
     } finally {
       setIsLoading(false);
     }

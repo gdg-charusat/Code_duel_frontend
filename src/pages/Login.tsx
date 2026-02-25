@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useApiError } from '@/hooks/useApiError';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +16,7 @@ const Login: React.FC = () => {
   
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { handleError, showSuccess } = useApiError();
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -45,17 +45,10 @@ const Login: React.FC = () => {
     
     try {
       await login(email, password);
-      toast({
-        title: 'Welcome back!',
-        description: 'Successfully logged in.',
-      });
+      showSuccess('Welcome back!', 'Successfully logged in.');
       navigate('/');
-    } catch {
-      toast({
-        title: 'Login failed',
-        description: 'Please check your credentials.',
-        variant: 'destructive',
-      });
+    } catch (error) {
+      handleError(error, 'Login');
     }
   };
 

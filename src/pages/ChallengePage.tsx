@@ -20,7 +20,7 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { mockChartData } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { challengeApi, dashboardApi } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useApiError } from "@/hooks/useApiError";
 import { useAuth } from "@/contexts/AuthContext";
 
 const difficultyColors = {
@@ -32,7 +32,7 @@ const difficultyColors = {
 
 const ChallengePage: React.FC = () => {
   const { id } = useParams();
-  const { toast } = useToast();
+  const { handleError, showSuccess } = useApiError();
   const { user } = useAuth();
 
   const [challenge, setChallenge] = useState<any>(null);
@@ -59,12 +59,8 @@ const ChallengePage: React.FC = () => {
       if (leaderboardResponse.success && leaderboardResponse.data) {
         setLeaderboard(leaderboardResponse.data);
       }
-    } catch {
-      toast({
-        title: "Failed to load challenge",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+    } catch (error) {
+      handleError(error, "Challenge Loading");
     } finally {
       setIsLoading(false);
     }
@@ -76,21 +72,16 @@ const ChallengePage: React.FC = () => {
     try {
       const response = await challengeApi.join(id);
       if (response.success) {
-        toast({
-          title: "Joined challenge!",
-          description: "You have successfully joined the challenge.",
-        });
+        showSuccess(
+          "Joined challenge!",
+          "You have successfully joined the challenge."
+        );
         loadChallengeData();
       } else {
         throw new Error(response.message);
       }
-    } catch (error: any) {
-      toast({
-        title: "Failed to join challenge",
-        description:
-          error.response?.data?.message || error.message || "Please try again.",
-        variant: "destructive",
-      });
+    } catch (error) {
+      handleError(error, "Join Challenge");
     } finally {
       setIsJoining(false);
     }
@@ -101,18 +92,11 @@ const ChallengePage: React.FC = () => {
     try {
       const response = await challengeApi.updateStatus(id!, "ACTIVE");
       if (response.success) {
-        toast({
-          title: "Challenge activated!",
-          description: "Your challenge is now active.",
-        });
+        showSuccess("Challenge activated!", "Your challenge is now active.");
         loadChallengeData();
       }
-    } catch {
-      toast({
-        title: "Failed to activate challenge",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+    } catch (error) {
+      handleError(error, "Activate Challenge");
     } finally {
       setIsActivating(false);
     }
