@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Skeleton } from "@/components/common/Skeleton";
+import EmptyState from "@/components/common/EmptyState";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -38,6 +40,7 @@ const ChallengePage: React.FC = () => {
   const [challenge, setChallenge] = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
 
@@ -60,6 +63,7 @@ const ChallengePage: React.FC = () => {
         setLeaderboard(leaderboardResponse.data);
       }
     } catch {
+      setHasError(true);
       toast({
         title: "Failed to load challenge",
         description: "Please try again.",
@@ -121,32 +125,36 @@ const ChallengePage: React.FC = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="flex justify-center min-h-[60vh] items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="space-y-6 p-4">
+          <Skeleton />
+          <Skeleton />
+          <Skeleton />
         </div>
       </Layout>
     );
   }
 
-  if (!challenge) {
+  if (hasError || !challenge) {
     return (
       <Layout>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold">Challenge not found</h2>
-        </div>
+        <EmptyState
+          icon={Target}
+          title="Challenge not found"
+          description="We couldn't load this challenge."
+        />
       </Layout>
     );
   }
 
   const daysRemaining = Math.ceil(
     (new Date(challenge.endDate).getTime() - Date.now()) /
-      (1000 * 60 * 60 * 24)
+    (1000 * 60 * 60 * 24)
   );
 
   const totalDays = Math.ceil(
     (new Date(challenge.endDate).getTime() -
       new Date(challenge.startDate).getTime()) /
-      (1000 * 60 * 60 * 24)
+    (1000 * 60 * 60 * 24)
   );
 
   const progress = Math.round(

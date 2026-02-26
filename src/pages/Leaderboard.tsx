@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Skeleton } from "@/components/common/Skeleton";
+import EmptyState from "@/components/common/EmptyState";
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Medal, Award, TrendingUp, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +18,7 @@ const Leaderboard: React.FC = () => {
   const { toast } = useToast();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     loadLeaderboard();
@@ -32,6 +35,7 @@ const Leaderboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
+      setHasError(true);
       toast({
         title: 'Error loading leaderboard',
         description: 'Could not fetch the latest rankings. Please try again later.',
@@ -69,16 +73,25 @@ const Leaderboard: React.FC = () => {
           </p>
         </div>
 
+
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="space-y-6">
+            <Skeleton />
+            <Skeleton />
+            <Skeleton />
           </div>
+        ) : hasError ? (
+          <EmptyState
+            icon={Trophy}
+            title="Failed to load leaderboard"
+            description="Please try refreshing the page."
+          />
         ) : leaderboardData.length === 0 ? (
-          <div className="text-center py-10 bg-muted/20 rounded-lg">
-            <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <h3 className="text-lg font-medium">No Data Available</h3>
-            <p className="text-muted-foreground">The leaderboard is currently empty.</p>
-          </div>
+          <EmptyState
+            icon={Trophy}
+            title="No Data Available"
+            description="The leaderboard is currently empty."
+          />
         ) : (
           <>
             {/* Top 3 Podium */}
@@ -177,7 +190,7 @@ const Leaderboard: React.FC = () => {
           </>
         )}
       </div>
-    </Layout>
+    </Layout >
   );
 };
 
