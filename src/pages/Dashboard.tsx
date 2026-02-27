@@ -14,7 +14,7 @@ import EmptyState from "@/components/common/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
 import { dashboardApi, challengeApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Stats } from "@/types";
+import { Stats, ActivityData, ChartData, Challenge } from "@/types";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -31,15 +31,11 @@ const Dashboard: React.FC = () => {
     activeChallenges: 0,
     totalSolved: 0,
   });
-  const [challenges, setChallenges] = useState<any[]>([]);
-  const [activityData, setActivityData] = useState<any[]>([]);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [activityData, setActivityData] = useState<ActivityData[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = React.useCallback(async () => {
     setIsLoading(true);
     try {
       // Load all dashboard data in parallel
@@ -82,17 +78,18 @@ const Dashboard: React.FC = () => {
 
       // Update activity heatmap
       if (activityResponse.success && activityResponse.data) {
-        setActivityData(activityResponse.data);
+        setActivityData(activityResponse.data as ActivityData[]);
       }
 
       // Update chart data
       if (chartResponse.success && chartResponse.data) {
-        setChartData(chartResponse.data);
+        setChartData(chartResponse.data as ChartData[]);
       }
 
       // Update challenges list
       if (challengesResponse.success && challengesResponse.data) {
-        setChallenges(challengesResponse.data);
+        // the backend shape is largely compatible with our Challenge type
+        setChallenges(challengesResponse.data as Challenge[]);
       }
     } catch (error: unknown) {
       console.error("Failed to load dashboard:", error);
@@ -105,7 +102,11 @@ const Dashboard: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   return (
     <Layout>
@@ -142,6 +143,43 @@ const Dashboard: React.FC = () => {
               </Link>
             </Button>
 
+ feat/consistent-ui-states
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title="Current Streak"
+            value={stats.currentStreak}
+            subtitle={`Best: ${stats.longestStreak} days`}
+            icon={Flame}
+            variant="warning"
+            trend="up"
+            trendValue="+3 from last week"
+          />
+          <StatsCard
+            title="Total Solved"
+            value={stats.totalSolved}
+            subtitle="Lifetime problems"
+            icon={Target}
+            variant="primary"
+          />
+
+          <StatsCard
+            title="Active Challenges"
+            value={stats.activeChallenges}
+            subtitle="Ongoing competitions"
+            icon={Trophy}
+            variant="success"
+          />
+          <StatsCard
+            title="Total Penalties"
+            value={`$${stats.totalPenalties}`}
+            subtitle="Avoid missing days!"
+            icon={DollarSign}
+            variant="destructive"
+          />
+        </div>
+ main
 
         {/* Invite Requests */}
         <InviteRequests />
