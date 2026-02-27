@@ -4,6 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+
+import CommandPalette from "@/components/common/CommandPalette";
 import CodeEditor from "./components/CodeEditor";
 
 // Pages
@@ -20,32 +26,25 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Leetcode from "./pages/Leetcode";
-
-import CommandPalette from "@/components/common/CommandPalette";
-const queryClient = new QueryClient();
-
 import JoinByCode from "./pages/JoinByCode";
 import StreakTest from "./pages/StreakTest";
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-
+/* ---------------- Query Client ---------------- */
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000,      // 2 minutes — avoid redundant refetches
-      gcTime: 10 * 60 * 1000,         // 10 minutes — keep cache for back-navigation
-      retry: 1,                        // Retry once on failure
-      refetchOnWindowFocus: true,      // Refresh data when user returns to tab
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: true,
     },
   },
 });
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+/* ---------------- Route Guards ---------------- */
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return null;
@@ -63,11 +62,14 @@ const AuthRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+/* ---------------- Routes ---------------- */
+
 const AppRoutes: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
   return (
     <Routes>
+      {/* Landing */}
       <Route
         path="/"
         element={
@@ -75,13 +77,10 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-
-      {/* Streak Test Page (Public for easy testing) */}
+      {/* Public */}
       <Route path="/streak-test" element={<StreakTest />} />
 
-      {/* Auth Routes */}
-
-
+      {/* Auth */}
       <Route
         path="/login"
         element={
@@ -101,6 +100,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
+      {/* Protected */}
       <Route
         path="/dashboard"
         element={
@@ -165,7 +165,6 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/join/:code"
         element={
@@ -175,41 +174,13 @@ const AppRoutes: React.FC = () => {
         }
       />
 
-      {/* Catch-all */}
+      {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
 
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-
-          <Sonner />
-
-
-          <Sonner position="top-center" duration={2000} />
-
-          <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
-          >
-            {/* 🔥 Global Command Palette Mounted Here */}
-            <CommandPalette />
-
-            <AppRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+/* ---------------- App Root ---------------- */
 
 const App: React.FC = () => {
   return (
@@ -218,8 +189,10 @@ const App: React.FC = () => {
         <AuthProvider>
           <TooltipProvider>
             <Toaster />
-            <Sonner />
+            <Sonner position="top-center" duration={2000} />
+
             <BrowserRouter>
+              <CommandPalette />
               <AppRoutes />
             </BrowserRouter>
           </TooltipProvider>
@@ -228,6 +201,5 @@ const App: React.FC = () => {
     </QueryClientProvider>
   );
 };
-
 
 export default App;

@@ -18,10 +18,13 @@ import { useToast } from "@/hooks/use-toast";
 const isEmail = (value: string): boolean => /\S+@\S+\.\S+/.test(value);
 
 const Login: React.FC = () => {
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{
+    identifier?: string;
+    password?: string;
+  }>({});
 
   const { login, isLoading } = useAuth();
   const { toast } = useToast();
@@ -31,10 +34,9 @@ const Login: React.FC = () => {
     const newErrors: { identifier?: string; password?: string } = {};
 
     if (!identifier.trim()) {
-      newErrors.identifier = 'Email or username is required';
-    } else if (identifier.includes('@') && !isEmail(identifier)) {
-      // Only enforce email format if the user has typed an '@' symbol
-      newErrors.identifier = 'Please enter a valid email address';
+      newErrors.identifier = "Email or username is required";
+    } else if (identifier.includes("@") && !isEmail(identifier)) {
+      newErrors.identifier = "Please enter a valid email address";
     }
 
     if (!password) {
@@ -52,19 +54,20 @@ const Login: React.FC = () => {
 
     if (!validate()) return;
 
-    try {
-      await login(identifier.trim(), password);
+    const result = await login(identifier.trim(), password);
+
+    if (result.success) {
       toast({
-        title: 'Welcome back!',
-        description: 'Successfully logged in.',
-        variant: 'success',
+        title: "Welcome back!",
+        description: "Successfully logged in.",
       });
-      // delayedNavigate('/');
-    } catch {
+
+      navigate("/");
+    } else {
       toast({
-        title: 'Login failed',
-        description: 'Invalid email/username or password. Please try again.',
-        variant: 'destructive',
+        title: "Login failed",
+        description: result.message || "Invalid credentials",
+        variant: "destructive",
       });
     }
   };
@@ -73,14 +76,11 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md animate-scale-in">
         <div className="flex justify-center mb-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2 font-semibold text-xl"
-          >
+          <Link to="/" className="flex items-center gap-2 font-semibold text-xl">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary shadow-glow">
               <Code2 className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span>LeetCode Tracker</span>
+            <span>Code Duel</span>
           </Link>
         </div>
 
@@ -103,10 +103,12 @@ const Login: React.FC = () => {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   autoComplete="username"
-                  className={errors.identifier ? 'border-destructive' : ''}
+                  className={errors.identifier ? "border-destructive" : ""}
                 />
                 {errors.identifier && (
-                  <p className="text-xs text-destructive">{errors.identifier}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.identifier}
+                  </p>
                 )}
               </div>
 
@@ -135,20 +137,26 @@ const Login: React.FC = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.password}
+                  </p>
                 )}
               </div>
 
               <div className="flex justify-end">
-                <Link 
-                  to="/forgot-password" 
+                <Link
+                  to="/forgot-password"
                   className="text-xs text-primary hover:underline font-medium"
                 >
                   Forgot password?
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full gradient-primary" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full gradient-primary"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
