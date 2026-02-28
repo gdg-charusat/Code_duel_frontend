@@ -1,4 +1,5 @@
  feat/consistent-ui-states
+ feat/consistent-ui-states
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import React, { useState, useEffect } from 'react';
 import { Skeleton } from "@/components/common/Skeleton";
@@ -16,6 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import { LeaderboardEntry } from '@/types';
 
 import React, { useEffect, useMemo, useState } from "react";
+
+import React, { useMemo, useState } from "react";
+ main
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Trophy } from "lucide-react";
 
@@ -31,16 +35,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dashboardApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { LeaderboardEntry } from "@/types";
+ feat/consistent-ui-states
 import { useLeaderboard } from "@/hooks/useLeaderboard"; main
+
+
+// ✅ Centralized React Query hook — cached globally
+import { useGlobalLeaderboard, useLeaderboard } from "@/hooks/useLeaderboard" main
 
 const Leaderboard: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
 
+ feat/consistent-ui-states
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>(
     [],
   );
@@ -55,11 +62,18 @@ const [sortKey, setSortKey] = useState<'rank' | 'totalSolved' | 'currentStreak' 
 const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
  main
 
+
+  // ✅ Single hook replaces useState + useEffect + loadLeaderboard + toast error handling
+  const { data: leaderboardData = [], isLoading } = useGlobalLeaderboard();
+
+  // Client-side filtering and sorting state
+ main
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<
     "rank" | "totalSolved" | "currentStreak" | "penaltyAmount"
   >("rank");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+ feat/consistent-ui-states
  main
   useEffect(() => {
     const loadLeaderboard = async () => {
@@ -132,8 +146,10 @@ const totalPenalties = processedLeaderboard.reduce(
   0
 );
 
+ main
+
   const processedLeaderboard = useLeaderboard(
-    leaderboardData,
+    leaderboardData as LeaderboardEntry[],
     searchQuery,
     sortKey,
     sortOrder,
@@ -153,8 +169,8 @@ const totalPenalties = processedLeaderboard.reduce(
     () =>
       processedLeaderboard.length > 0
         ? Math.max(
-            ...processedLeaderboard.map((entry) => entry.currentStreak || 0),
-          )
+          ...processedLeaderboard.map((entry) => entry.currentStreak || 0),
+        )
         : 0,
     [processedLeaderboard],
   );

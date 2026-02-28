@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Flame, Target, DollarSign, Zap, Trophy, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,17 +11,35 @@ import ActivityHeatmap from "@/components/dashboard/ActivityHeatmap";
 import ChallengeCard from "@/components/dashboard/ChallengeCard";
 import InviteRequests from "@/components/dashboard/InviteRequests";
 import EmptyState from "@/components/common/EmptyState";
+import { Skeleton } from "@/components/common/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { dashboardApi, challengeApi } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
-import { Stats, ActivityData, ChartData, Challenge } from "@/types";
+import { Stats, Challenge } from "@/types";
+
+// ✅ Centralized React Query hooks — single source of truth
+import { useDashboardStats, useActivityHeatmap, useSubmissionChart } from "@/hooks/useDashboardData";
+import { useChallenges } from "@/hooks/useChallenges";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+ feat/consistent-ui-states
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [stats, setStats] = useState<Stats>({
+
+
+  // ✅ All data is fetched via cached React Query hooks
+  // No manual useState/useEffect/loadDashboardData needed
+  const { data: statsData, isLoading: statsLoading } = useDashboardStats();
+  const { data: activityData, isLoading: activityLoading } = useActivityHeatmap();
+  const { data: chartData, isLoading: chartLoading } = useSubmissionChart();
+  const { data: challengesData, isLoading: challengesLoading } = useChallenges();
+
+  const isLoading = statsLoading || activityLoading || chartLoading || challengesLoading;
+
+  // Derive stats with fallbacks
+  const stats: Stats = statsData || {
+ main
     todayStatus: "pending",
     todaySolved: 0,
     todayTarget: 0,
@@ -30,6 +48,7 @@ const Dashboard: React.FC = () => {
     totalPenalties: 0,
     activeChallenges: 0,
     totalSolved: 0,
+ feat/consistent-ui-states
   });
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
@@ -107,6 +126,13 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  };
+
+  const challenges = challengesData || [];
+  const activity = activityData || [];
+  const chart = chartData || [];
+ main
 
   return (
     <Layout>
@@ -191,7 +217,7 @@ const Dashboard: React.FC = () => {
             <TodayStatus stats={stats} />
  main
           </div>
-
+ feat/consistent-ui-states
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
@@ -223,15 +249,27 @@ const Dashboard: React.FC = () => {
               subtitle="Avoid missing days!"
               icon={DollarSign}
               variant="destructive"
+
+          {/* Right Column - Chart */}
+          <div className="lg:col-span-2">
+            <ProgressChart
+              data={chart}
+              title="Daily Submissions (Last 30 Days)"
+ main
             />
           </div>
 
+ feat/consistent-ui-states
           {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Today's Status */}
             <div className="lg:col-span-1">
               <TodayStatus stats={stats} />
             </div>
+
+        {/* Activity Heatmap */}
+        <ActivityHeatmap data={activity} title="Contribution Graph" />
+ main
 
             {/* Right Column - Chart */}
             <div className="lg:col-span-2">
@@ -242,6 +280,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
+ feat/consistent-ui-states
           {/* Activity Heatmap */}
           <ActivityHeatmap data={activityData} title="Contribution Graph" />
 
@@ -272,6 +311,25 @@ const Dashboard: React.FC = () => {
               />
             )}
           </div>
+
+          {challenges.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {challenges.slice(0, 3).map((challenge: Challenge) => (
+                <ChallengeCard key={challenge.id} challenge={challenge} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Zap}
+              title="No active challenges"
+              description="Create or join a challenge to start competing with others and stay motivated!"
+              action={{
+                label: "Create Challenge",
+                onClick: () => { },
+              }}
+            />
+          )}
+ main
         </div>
       )}
     </Layout>
