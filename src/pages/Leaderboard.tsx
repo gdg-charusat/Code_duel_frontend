@@ -4,6 +4,8 @@ import { ArrowLeft, Loader2, Trophy } from "lucide-react";
 
 import Layout from "@/components/layout/Layout";
 import LeaderboardTable from "@/components/leaderboard/LeaderboardTable";
+import AsyncStateWrapper from "@/components/common/AsyncStateWrapper";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,19 +16,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { LeaderboardEntry } from "@/types";
 
-// ✅ Centralized React Query hook — cached globally
-import { useGlobalLeaderboard, useLeaderboard } from "@/hooks/useLeaderboard";
+import {
+  useGlobalLeaderboard,
+  useLeaderboard,
+} from "@/hooks/useLeaderboard";
 
 const Leaderboard: React.FC = () => {
   const { user } = useAuth();
 
-  // ✅ Single hook replaces useState + useEffect + loadLeaderboard + toast error handling
-  const { data: leaderboardData = [], isLoading } = useGlobalLeaderboard();
+  const { data: leaderboardData = [], isLoading } =
+    useGlobalLeaderboard();
 
-  // Client-side filtering and sorting state
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<
     "rank" | "totalSolved" | "currentStreak" | "penaltyAmount"
@@ -39,6 +43,7 @@ const Leaderboard: React.FC = () => {
     sortKey,
     sortOrder,
   );
+
   const topThree = processedLeaderboard.slice(0, 3);
 
   const totalSolved = useMemo(
@@ -54,8 +59,10 @@ const Leaderboard: React.FC = () => {
     () =>
       processedLeaderboard.length > 0
         ? Math.max(
-          ...processedLeaderboard.map((entry) => entry.currentStreak || 0),
-        )
+            ...processedLeaderboard.map(
+              (entry) => entry.currentStreak || 0,
+            ),
+          )
         : 0,
     [processedLeaderboard],
   );
@@ -83,7 +90,7 @@ const Leaderboard: React.FC = () => {
           <Input
             placeholder="Search username..."
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
 
           <Select
@@ -115,11 +122,15 @@ const Leaderboard: React.FC = () => {
           </Select>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
+        <AsyncStateWrapper
+          isLoading={isLoading}
+          hasError={false}
+          isEmpty={leaderboardData.length === 0}
+          emptyIcon={Trophy}
+          emptyTitle="No Data Available"
+          emptyDescription="The leaderboard is currently empty."
+          errorIcon={Trophy}
+        >
           <>
             {topThree.length > 0 && (
               <Card>
@@ -155,29 +166,39 @@ const Leaderboard: React.FC = () => {
             <div className="grid gap-3 sm:grid-cols-3">
               <Card>
                 <CardContent className="p-4">
-                  <p className="text-sm text-muted-foreground">Total Solved</p>
-                  <p className="text-2xl font-semibold">{totalSolved}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Solved
+                  </p>
+                  <p className="text-2xl font-semibold">
+                    {totalSolved}
+                  </p>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">
                     Longest Streak
                   </p>
-                  <p className="text-2xl font-semibold">{longestStreak}</p>
+                  <p className="text-2xl font-semibold">
+                    {longestStreak}
+                  </p>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">
                     Total Penalties
                   </p>
-                  <p className="text-2xl font-semibold">${totalPenalties}</p>
+                  <p className="text-2xl font-semibold">
+                    ${totalPenalties}
+                  </p>
                 </CardContent>
               </Card>
             </div>
           </>
-        )}
+        </AsyncStateWrapper>
       </div>
     </Layout>
   );

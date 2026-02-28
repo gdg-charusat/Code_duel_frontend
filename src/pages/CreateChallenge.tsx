@@ -175,6 +175,7 @@ const CreateChallenge: React.FC = () => {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+
               <Label htmlFor="name">Challenge Name</Label>
               <Input
                 id="name"
@@ -182,6 +183,156 @@ const CreateChallenge: React.FC = () => {
                 onChange={(e) => setName(e.target.value)}
               />
               <ErrorMessage message={errors.name} />
+              <div className="space-y-2">
+                <Label htmlFor="name">Challenge Name</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., January Grind, Hard Mode Warriors"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={errors.name ? "border-destructive" : ""}
+                />
+                {errors.name && (
+                  <p className="text-xs text-destructive">{errors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe your challenge..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dailyTarget">Daily Target</Label>
+                  <Input
+                    id="dailyTarget"
+                    type="number"
+                    min="1"
+                    placeholder="2"
+                    value={dailyTarget}
+                    onChange={(e) => setDailyTarget(e.target.value)}
+                    className={errors.dailyTarget ? "border-destructive" : ""}
+                  />
+                  {errors.dailyTarget && (
+                    <p className="text-xs text-destructive">
+                      {errors.dailyTarget}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Problems to solve per day
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Minimum Difficulty</Label>
+                  <Select value={difficulty} onValueChange={setDifficulty}>
+                    <SelectTrigger id="difficulty">
+                      <SelectValue placeholder="Select difficulty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any Difficulty</SelectItem>
+                      <SelectItem value="easy">Easy or Higher</SelectItem>
+                      <SelectItem value="medium">Medium or Higher</SelectItem>
+                      <SelectItem value="hard">Hard Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="penaltyAmount">Penalty Amount ($)</Label>
+                <Input
+                  id="penaltyAmount"
+                  type="number"
+                  min="0"
+                  placeholder="5"
+                  value={penaltyAmount}
+                  onChange={(e) => setPenaltyAmount(e.target.value)}
+                  className={errors.penaltyAmount ? "border-destructive" : ""}
+                />
+                {errors.penaltyAmount && (
+                  <p className="text-xs text-destructive">
+                    {errors.penaltyAmount}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Amount charged for each missed day
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    min={getTodayString()}
+                    value={startDate}
+
+                    onChange={(e) => {
+                      const newStartDate = e.target.value;
+                      setStartDate(newStartDate);
+                      if (
+                        endDate &&
+                        newStartDate &&
+                        !isAfter(parseISO(endDate), parseISO(newStartDate))
+                      ) {
+                        setEndDate("");
+                      }
+                    }}
+                    className={errors.startDate ? "border-destructive" : ""}
+                  />
+                  {errors.startDate && (
+                    <p className="text-xs text-destructive">
+                      {errors.startDate}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    min={startDate || getTodayString()}
+                    value={endDate}
+
+                    disabled={!startDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className={errors.endDate ? "border-destructive" : ""}
+                  />
+                  {errors.endDate && (
+                    <p className="text-xs text-destructive">{errors.endDate}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Visibility Radio button */}
+              <div className="space-y-2">
+                <Label>Visibility</Label>
+                <RadioGroup value={visibility} onValueChange={setVisibility}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="PUBLIC" id="public" />
+                    <Label htmlFor="public" className="cursor-pointer">Public</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="PRIVATE" id="private" />
+                    <Label htmlFor="private" className="cursor-pointer">Private</Label>
+                  </div>
+                </RadioGroup>
+                <p className="text-xs text-muted-foreground">
+                  Public challenges are visible to all users. Private challenges are only visible to the owner and invited members.
+                </p>
+              </div>
+
+ 3baf9cb (merge main into safe-state-persistence)
 
               <div className="flex gap-3 pt-4">
                 <Button
