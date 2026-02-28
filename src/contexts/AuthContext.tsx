@@ -89,24 +89,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         leetcodeUsername
       );
 
-      if (response.success && response.data) {
-        const { user: userData, token } = response.data;
-
-        // Map backend user to frontend User type
-        const mappedUser: User = {
-          id: userData.id,
-          name: userData.username,
-          email: userData.email,
-          leetcodeUsername: userData.leetcodeUsername,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.username}`,
-        };
-
-        localStorage.setItem("auth_token", token);
-        localStorage.setItem("user", JSON.stringify(mappedUser));
-        setUser(mappedUser);
-      } else {
+      if (!response.success) {
         throw new Error(response.message || "Registration failed");
       }
+      // Do NOT auto-login - user must verify email first
     } finally {
       setIsLoading(false);
     }
