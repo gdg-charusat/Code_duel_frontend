@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import VerifyEmailPending from "./pages/VerifyEmailPending";
 import ChallengePage from "./pages/ChallengePage";
 import CreateChallenge from "./pages/CreateChallenge";
 import Leaderboard from "./pages/Leaderboard";
@@ -76,6 +77,7 @@ const AppRoutes = () => {
           </AuthRoute>
         }
       />
+      <Route path="/verify-email-pending" element={<VerifyEmailPending />} />
 
       {/* Protected Routes */}
       <Route

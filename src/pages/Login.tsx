@@ -50,10 +50,13 @@ const Login: React.FC = () => {
         description: 'Successfully logged in.',
       });
       navigate('/');
-    } catch {
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Please check your credentials.';
+      const is403 = error?.response?.status === 403;
+      
       toast({
         title: 'Login failed',
-        description: 'Please check your credentials.',
+        description: is403 ? errorMessage : 'Please check your credentials.',
         variant: 'destructive',
       });
     }

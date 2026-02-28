@@ -55,14 +55,14 @@ const Register: React.FC = () => {
     try {
       await register(name, email, password, leetcodeUsername);
       toast({
-        title: 'Account created!',
-        description: 'Welcome to LeetCode Tracker.',
+        title: 'Registration successful!',
+        description: 'Please verify your email before logging in.',
       });
-      navigate('/');
-    } catch {
+      navigate('/verify-email-pending');
+    } catch (error: any) {
       toast({
         title: 'Registration failed',
-        description: 'Please try again.',
+        description: error?.response?.data?.message || 'Please try again.',
         variant: 'destructive',
       });
     }
