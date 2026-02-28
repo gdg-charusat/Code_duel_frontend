@@ -7,11 +7,12 @@ import type {
   ChartData,
   ChallengeInvite,
   UserSearchResult,
+  DashboardResponse,
   LeaderboardEntry,
   LeetCodeProfile,
 } from "@/types";
 
-// API Base URL
+// API Base URL - Change this to your backend URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 // Create axios instance
@@ -32,7 +33,9 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 // Response interceptor for error handling
@@ -40,6 +43,7 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
+      // Clear auth on 401
       localStorage.removeItem("auth_token");
       localStorage.removeItem("user");
       window.location.href = "/login";
@@ -67,6 +71,8 @@ export interface LoginResponse {
   token: string;
 }
 
+// RegisterResponse is intentionally identical to LoginResponse but kept as a separate type
+// for potential future extensions specific to registration
 export interface RegisterResponse extends LoginResponse {}
 
 export interface DashboardResponse {
@@ -78,6 +84,39 @@ export interface DashboardResponse {
   };
   activeChallenges: Challenge[];
   recentActivity: Record<string, unknown>[];
+}
+
+export interface LeaderboardMember {
+  userId: string;
+  userName?: string;
+  username?: string;
+  totalPenalty?: number;
+  status?: string;
+  avatar?: string;
+}
+
+export interface ChallengeResponse {
+  id: string;
+  name: string;
+  description: string;
+  minSubmissionsPerDay: number;
+  difficultyFilter: string[] | null;
+  uniqueProblemConstraint: boolean;
+  penaltyAmount: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+  ownerId: string;
+  createdAt: string;
+  members?: any[];
+  summary: {
+    totalChallenges: number;
+    activeChallenges: number;
+    completedChallenges: number;
+    totalPenalties: number;
+  };
+  activeChallenges: Challenge[];
+  recentActivity: any[];
 }
 
 export interface TodayStatusResponse {
@@ -103,14 +142,19 @@ export interface SessionStatus {
   expiresAt: string;
 }
 
+// ============================================================================
 // AUTH APIs
+// ============================================================================// API implementations
 export const authApi = {
   login: async (emailOrUsername: string, password: string) => {
-    const res = await api.post<ApiResponse<LoginResponse>>("/api/auth/login", {
-      emailOrUsername,
-      password,
-    });
-    return res.data;
+    const response = await api.post<ApiResponse<LoginResponse>>(
+      "/api/auth/login",
+      {
+        emailOrUsername,
+        password,
+      }
+    );
+    return response.data;
   },
 
   register: async (
@@ -119,41 +163,48 @@ export const authApi = {
     password: string,
     leetcodeUsername: string
   ) => {
-    const res = await api.post<ApiResponse<RegisterResponse>>(
+    const response = await api.post<ApiResponse<RegisterResponse>>(
       "/api/auth/register",
-      { email, username, password, leetcodeUsername }
+      {
+        email,
+        username,
+        password,
+        leetcodeUsername,
+      }
     );
-    return res.data;
+    return response.data;
   },
 
   getProfile: async () => {
-    const res = await api.get<ApiResponse<User>>("/api/auth/profile");
-    return res.data;
+    const response = await api.get<ApiResponse<User>>("/api/auth/profile");
+    return response.data;
   },
 
   updateProfile: async (data: { leetcodeUsername?: string }) => {
-    const res = await api.put<ApiResponse<User>>("/api/auth/profile", data);
-    return res.data;
+    const response = await api.put<ApiResponse<User>>("/api/auth/profile", data);
+    return response.data;
   },
 
   forgotPassword: async (email: string) => {
-    const res = await api.post<ApiResponse<{ message: string }>>(
+    const response = await api.post<ApiResponse<{ message: string }>>(
       "/api/auth/forgot-password",
       { email }
     );
-    return res.data;
+    return response.data;
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    const res = await api.post<ApiResponse<{ message: string }>>(
+    const response = await api.post<ApiResponse<{ message: string }>>(
       "/api/auth/reset-password",
       { token, newPassword }
     );
-    return res.data;
+    return response.data;
   },
 };
 
+// ============================================================================
 // CHALLENGE APIs
+// ============================================================================
 export const challengeApi = {
   create: async (data: {
     name: string;
@@ -166,242 +217,267 @@ export const challengeApi = {
     endDate: string;
     visibility: string;
   }) => {
-    const res = await api.post<ApiResponse<Challenge>>("/api/challenges", data);
-    return res.data;
+    const response = await api.post<ApiResponse<Challenge>>(
+      "/api/challenges",
+      data
+    );
+    return response.data;
   },
 
-  getAll: async (
-    signal?: AbortSignal,
-    params?: { status?: string; owned?: boolean }
-  ) => {
-    const res = await api.get<ApiResponse<Challenge[]>>("/api/challenges", {
-      params,
-      signal,
-    });
-    return res.data;
+  getAll: async (params?: { status?: string; owned?: boolean }) => {
+    const response = await api.get<ApiResponse<Challenge[]>>(
+      "/api/challenges",
+      { params }
+    );
+    return response.data;
   },
 
   getById: async (id: string) => {
-    const res = await api.get<ApiResponse<Challenge>>(
+    const response = await api.get<ApiResponse<Challenge>>(
       `/api/challenges/${id}`
     );
-    return res.data;
+    return response.data;
   },
 
   join: async (id: string) => {
-    const res = await api.post<ApiResponse<Challenge>>(
+    const response = await api.post<ApiResponse<Challenge>>(
       `/api/challenges/${id}/join`
     );
-    return res.data;
+    return response.data;
   },
 
   updateStatus: async (id: string, status: string) => {
-    const res = await api.patch<ApiResponse<Challenge>>(
+    const response = await api.patch<ApiResponse<Challenge>>(
       `/api/challenges/${id}/status`,
-      { status }
+      {
+        status,
+      }
     );
-    return res.data;
+    return response.data;
   },
 
   generateInvite: async (
     challengeId: string,
     data: { expiresInHours: number; maxUses: number }
   ) => {
-    const res = await api.post<ApiResponse<any>>(
+    const response = await api.post<ApiResponse<any>>(
       `/api/challenges/${challengeId}/invite`,
       data
     );
-    return res.data;
+    return response.data;
   },
 
   joinByCode: async (code: string) => {
-    const res = await api.post<ApiResponse<any>>(
+    const response = await api.post<ApiResponse<any>>(
       "/api/challenges/join-by-code",
       { code }
     );
-    return res.data;
+    return response.data;
   },
 };
 
+// ============================================================================
 // INVITE APIs
+// ============================================================================
 export const inviteApi = {
   sendInvite: async (challengeId: string, userId: string) => {
-    const res = await api.post<ApiResponse<ChallengeInvite>>(
+    const response = await api.post<ApiResponse<ChallengeInvite>>(
       `/api/challenge/${challengeId}/invite`,
       { userId }
     );
-    return res.data;
+    return response.data;
   },
 
   getMyInvites: async () => {
-    const res = await api.get<ApiResponse<ChallengeInvite[]>>("/api/invites");
-    return res.data;
+    const response = await api.get<ApiResponse<ChallengeInvite[]>>("/api/invites");
+    return response.data;
   },
 
   acceptInvite: async (challengeId: string) => {
-    const res = await api.post<ApiResponse<ChallengeInvite>>(
+    const response = await api.post<ApiResponse<ChallengeInvite>>(
       `/api/challenge/${challengeId}/invite/accept`
     );
-    return res.data;
+    return response.data;
   },
 
   rejectInvite: async (challengeId: string) => {
-    const res = await api.post<ApiResponse<ChallengeInvite>>(
+    const response = await api.post<ApiResponse<ChallengeInvite>>(
       `/api/challenge/${challengeId}/invite/reject`
     );
-    return res.data;
+    return response.data;
   },
 };
 
+// ============================================================================
 // USER APIs
+// ============================================================================
 export const userApi = {
   searchUsers: async (query: string, signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<UserSearchResult[]>>(
-      "/api/users/search",
-      { params: { q: query }, signal }
-    );
-    return res.data;
+    const response = await api.get<ApiResponse<UserSearchResult[]>>("/api/users/search", {
+      params: { q: query },
+      signal,
+    });
+    return response.data;
   },
 };
 
+// ============================================================================
 // DASHBOARD APIs
+// ============================================================================
 export const dashboardApi = {
-  getOverview: async (signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<DashboardResponse>>(
-      "/api/dashboard",
-      { signal }
+  getOverview: async () => {
+    const response = await api.get<ApiResponse<DashboardResponse>>(
+      "/api/dashboard"
     );
-    return res.data;
+    return response.data;
   },
 
-  getTodayStatus: async (signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<TodayStatusResponse>>(
-      "/api/dashboard/today",
-      { signal }
+  getTodayStatus: async () => {
+    const response = await api.get<ApiResponse<TodayStatusResponse>>(
+      "/api/dashboard/today"
     );
-    return res.data;
+    return response.data;
   },
 
-  getChallengeProgress: async (challengeId: string, signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<any>>(
-      `/api/dashboard/challenge/${challengeId}`,
-      { signal }
+  getChallengeProgress: async (challengeId: string) => {
+    const response = await api.get<ApiResponse<ChartData[]>>(
+      `/api/dashboard/challenge/${challengeId}`
     );
-    return res.data;
+    return response.data;
   },
 
-  getChallengeLeaderboard: async (challengeId: string, signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<any>>(
-      `/api/dashboard/challenge/${challengeId}/leaderboard`,
-      { signal }
+  getChallengeLeaderboard: async (challengeId: string) => {
+    const response = await api.get<ApiResponse<LeaderboardEntry[]>>(
+      `/api/dashboard/challenge/${challengeId}/leaderboard`
     );
-    return res.data;
+    return response.data;
   },
 
-  getActivityHeatmap: async (signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<ActivityData[]>>(
-      "/api/dashboard/activity-heatmap",
-      { signal }
+  getActivityHeatmap: async () => {
+    const response = await api.get<ApiResponse<ActivityData[]>>(
+      "/api/dashboard/activity-heatmap"
     );
-    return res.data;
+    return response.data;
   },
 
-  getStats: async (signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<DashboardStats>>(
-      "/api/dashboard/stats",
-      { signal }
-    );
-    return res.data;
+  getStats: async () => {
+    const response = await api.get<ApiResponse<DashboardStats>>("/api/dashboard/stats");
+    return response.data;
   },
 
-  getSubmissionChart: async (signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<ChartData[]>>(
-      "/api/dashboard/submission-chart",
-      { signal }
+  getSubmissionChart: async () => {
+    const response = await api.get<ApiResponse<ChartData[]>>(
+      "/api/dashboard/submission-chart"
     );
-    return res.data;
+    return response.data;
   },
 
-  getGlobalLeaderboard: async (signal?: AbortSignal) => {
-    const res = await api.get<ApiResponse<LeaderboardEntry[]>>(
-      "/api/dashboard/leaderboard",
-      { signal }
+  getGlobalLeaderboard: async () => {
+    const response = await api.get<ApiResponse<LeaderboardEntry[]>>(
+      "/api/dashboard/leaderboard"
     );
-    return res.data;
+    return response.data;
   },
 };
 
+// ============================================================================
 // LEETCODE APIs
+// ============================================================================
 export const leetcodeApi = {
   storeSession: async (
     cookie: string,
     csrfToken: string,
     expiresAt: string
   ) => {
-    const res = await api.post<ApiResponse<unknown>>(
-      "/api/leetcode/session",
-      { cookie, csrfToken, expiresAt }
-    );
-    return res.data;
+    const response = await api.post<ApiResponse<unknown>>("/api/leetcode/session", {
+      cookie,
+      csrfToken,
+      expiresAt,
+    });
+    return response.data;
   },
 
   getSessionStatus: async () => {
-    const res = await api.get<ApiResponse<SessionStatus>>(
-      "/api/leetcode/session"
-    );
-    return res.data;
+    const response = await api.get<ApiResponse<SessionStatus>>("/api/leetcode/session");
+    return response.data;
   },
 
   invalidateSession: async () => {
-    const res = await api.delete<ApiResponse<null>>(
+    const response = await api.delete<ApiResponse<null>>(
       "/api/leetcode/session"
     );
-    return res.data;
+    return response.data;
   },
 
   getProfile: async (username: string) => {
-    const res = await api.get<ApiResponse<LeetCodeProfile>>(
+    const response = await api.get<ApiResponse<LeetCodeProfile>>(
       `/api/leetcode/profile/${username}`
     );
-    return res.data;
+    return response.data;
+  },
+
+  testConnection: async (username: string) => {
+    interface TestResponse {
+      submissions?: unknown[];
+      message?: string;
+    }
+    const response = await api.get<ApiResponse<TestResponse>>(
+      `/api/leetcode/test/${username}`
+    );
+    return response.data;
+  },
+
+  getProblemMetadata: async (titleSlug: string) => {
+    const response = await api.get<ApiResponse<Record<string, unknown>>>(
+      `/api/leetcode/problem/${titleSlug}`
+    );
+    return response.data;
   },
 };
 
+// ============================================================================
 // GAMIFICATION APIs
+// ============================================================================
 export const gamificationApi = {
+  // Get all available achievements
   getAllAchievements: async () => {
-    const res = await api.get<ApiResponse<any[]>>("/api/achievements");
-    return res.data;
+    const response = await api.get<ApiResponse<any[]>>("/api/achievements");
+    return response.data;
   },
 
+  // Get user's achievements with progress
   getUserAchievements: async (userId?: string) => {
     const url = userId
       ? `/api/achievements/user/${userId}`
       : "/api/achievements/user";
-    const res = await api.get<ApiResponse<any[]>>(url);
-    return res.data;
+    const response = await api.get<ApiResponse<any[]>>(url);
+    return response.data;
   },
 
+  // Unlock an achievement
   unlockAchievement: async (achievementId: string) => {
-    const res = await api.post<ApiResponse<any>>("/api/achievements/unlock", {
+    const response = await api.post<ApiResponse<any>>("/api/achievements/unlock", {
       achievementId,
     });
-    return res.data;
+    return response.data;
   },
 
+  // Get user's current tier
   getCurrentTier: async () => {
-    const res = await api.get<ApiResponse<any>>("/api/tiers/current");
-    return res.data;
+    const response = await api.get<ApiResponse<any>>("/api/tiers/current");
+    return response.data;
   },
 
+  // Get progress to next tier
   getTierProgress: async () => {
-    const res = await api.get<ApiResponse<any>>("/api/tiers/progress");
-    return res.data;
+    const response = await api.get<ApiResponse<any>>("/api/tiers/progress");
+    return response.data;
   },
 
+  // Get gamification stats overview
   getGamificationStats: async () => {
-    const res = await api.get<ApiResponse<any>>("/api/gamification/stats");
-    return res.data;
+    const response = await api.get<ApiResponse<any>>("/api/gamification/stats");
+    return response.data;
   },
 };
 
