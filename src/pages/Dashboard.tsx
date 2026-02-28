@@ -13,7 +13,10 @@ import InviteRequests from "@/components/dashboard/InviteRequests";
 import EmptyState from "@/components/common/EmptyState";
 import { Skeleton } from "@/components/common/Skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { Stats, Challenge } from "@/types";
+import { dashboardApi, challengeApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import JoinByCodeDialog from "@/components/challenge/JoinByCodeDialog";
+import { Stats, ActivityData, ChartData, Challenge } from "@/types";
 
 // ✅ Centralized React Query hooks — single source of truth
 import { useDashboardStats, useActivityHeatmap, useSubmissionChart } from "@/hooks/useDashboardData";
@@ -21,7 +24,6 @@ import { useChallenges } from "@/hooks/useChallenges";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
- feat/consistent-ui-states
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -39,7 +41,6 @@ const Dashboard: React.FC = () => {
 
   // Derive stats with fallbacks
   const stats: Stats = statsData || {
- main
     todayStatus: "pending",
     todaySolved: 0,
     todayTarget: 0,
@@ -48,7 +49,6 @@ const Dashboard: React.FC = () => {
     totalPenalties: 0,
     activeChallenges: 0,
     totalSolved: 0,
- feat/consistent-ui-states
   });
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
@@ -132,7 +132,7 @@ const Dashboard: React.FC = () => {
   const challenges = challengesData || [];
   const activity = activityData || [];
   const chart = chartData || [];
- main
+ 
 
   return (
     <Layout>
@@ -141,8 +141,30 @@ const Dashboard: React.FC = () => {
           <Skeleton />
           <Skeleton />
           <Skeleton />
+
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">
+              Welcome back,{" "}
+              <span className="gradient-text">{user?.name || "Developer"}</span>
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Track your daily coding progress and stay consistent
+            </p>
+          </div>
+          <div className="flex gap-2 sm:flex-row flex-col">
+            <JoinByCodeDialog />
+            <Button asChild className="gradient-primary sm:w-auto w-full">
+              <Link to="/create-challenge" className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Challenge
+              </Link>
+            </Button>
+          </div>
+
         </div>
- feat/consistent-ui-states
       ) : hasError ? (
         <EmptyState
           icon={Zap}
@@ -169,7 +191,6 @@ const Dashboard: React.FC = () => {
               </Link>
             </Button>
 
- feat/consistent-ui-states
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -205,7 +226,7 @@ const Dashboard: React.FC = () => {
             variant="destructive"
           />
         </div>
- main
+
 
         {/* Invite Requests */}
         <InviteRequests />
@@ -215,9 +236,8 @@ const Dashboard: React.FC = () => {
           {/* Left Column - Today's Status */}
           <div className="lg:col-span-1">
             <TodayStatus stats={stats} />
- main
+
           </div>
- feat/consistent-ui-states
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
@@ -255,11 +275,10 @@ const Dashboard: React.FC = () => {
             <ProgressChart
               data={chart}
               title="Daily Submissions (Last 30 Days)"
- main
+ 
             />
           </div>
 
- feat/consistent-ui-states
           {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Today's Status */}
@@ -269,7 +288,7 @@ const Dashboard: React.FC = () => {
 
         {/* Activity Heatmap */}
         <ActivityHeatmap data={activity} title="Contribution Graph" />
- main
+ 
 
             {/* Right Column - Chart */}
             <div className="lg:col-span-2">
@@ -280,7 +299,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
- feat/consistent-ui-states
           {/* Activity Heatmap */}
           <ActivityHeatmap data={activityData} title="Contribution Graph" />
 
