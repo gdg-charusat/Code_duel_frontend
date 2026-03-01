@@ -40,7 +40,9 @@ const Register: React.FC = () => {
       leetcodeUsername?: string;
     } = {};
 
-    if (!username.trim()) nextErrors.username = "Username is required";
+    if (!username.trim()) {
+      nextErrors.username = "Username is required";
+    }
 
     if (!email) {
       nextErrors.email = "Email is required";
@@ -67,7 +69,12 @@ const Register: React.FC = () => {
 
     if (!validate()) return;
 
-    const result = await register(username, email, password, leetcodeUsername);
+    const result = await register(
+      username,
+      email,
+      password,
+      leetcodeUsername
+    );
 
     if (result.success) {
       toast({
@@ -103,46 +110,61 @@ const Register: React.FC = () => {
         <Card className="border-2">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl">Create an account</CardTitle>
-            <CardDescription>Start your coding journey now</CardDescription>
+            <CardDescription>
+              Start your coding journey now
+            </CardDescription>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Username */}
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
                   value={username}
-                  onChange={(event) => setUsername(event.target.value)}
+                  onChange={(e) => setUsername(e.target.value)}
                   className={errors.username ? "border-destructive" : ""}
                 />
                 {errors.username && (
-                  <p className="text-xs text-destructive">{errors.username}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.username}
+                  </p>
                 )}
               </div>
 
+              {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   className={errors.email ? "border-destructive" : ""}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
+              {/* LeetCode Username */}
               <div className="space-y-2">
-                <Label htmlFor="leetcodeUsername">LeetCode Username</Label>
+                <Label htmlFor="leetcodeUsername">
+                  LeetCode Username
+                </Label>
                 <Input
                   id="leetcodeUsername"
                   value={leetcodeUsername}
-                  onChange={(event) => setLeetcodeUsername(event.target.value)}
+                  onChange={(e) =>
+                    setLeetcodeUsername(e.target.value)
+                  }
                   className={
-                    errors.leetcodeUsername ? "border-destructive" : ""
+                    errors.leetcodeUsername
+                      ? "border-destructive"
+                      : ""
                   }
                 />
                 {errors.leetcodeUsername && (
@@ -152,6 +174,7 @@ const Register: React.FC = () => {
                 )}
               </div>
 
+              {/* Password */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -159,14 +182,18 @@ const Register: React.FC = () => {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(e) => setPassword(e.target.value)}
                     className={
-                      errors.password ? "border-destructive pr-10" : "pr-10"
+                      errors.password
+                        ? "border-destructive pr-10"
+                        : "pr-10"
                     }
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
+                    onClick={() =>
+                      setShowPassword((prev) => !prev)
+                    }
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
@@ -177,7 +204,9 @@ const Register: React.FC = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.password}
+                  </p>
                 )}
               </div>
 

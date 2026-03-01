@@ -1,205 +1,94 @@
-import React from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+// Contexts
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-
-import CommandPalette from "@/components/common/CommandPalette";
-import CodeEditor from "./components/CodeEditor";
+// UI Components
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from '@/components/ui/sonner';
+import CommandPalette from '@/components/common/CommandPalette';
+import CodeEditor from '@/components/CodeEditor';
 
 // Pages
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import ChallengePage from "./pages/ChallengePage";
-import CreateChallenge from "./pages/CreateChallenge";
-import Leaderboard from "./pages/Leaderboard";
-import Settings from "./pages/Settings";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import Leetcode from "./pages/Leetcode";
-import JoinByCode from "./pages/JoinByCode";
-import StreakTest from "./pages/StreakTest";
+import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ChallengePage from '@/pages/ChallengePage';
+import CreateChallenge from '@/pages/CreateChallenge';
+import Leaderboard from '@/pages/Leaderboard';
+import Settings from '@/pages/Settings';
+import Profile from '@/pages/Profile';
+import Leetcode from '@/pages/Leetcode';
+import NotFound from '@/pages/NotFound';
 
-/* ---------------- Query Client ---------------- */
+const queryClient = new QueryClient();
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 2 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: true,
-    },
-  },
-});
-
-/* ---------------- Route Guards ---------------- */
-
+// Protected Route
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) return null;
+  if (isLoading) return <div>Loading...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   return <>{children}</>;
 };
 
+// Auth Route
 const AuthRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) return null;
+  if (isLoading) return <div>Loading...</div>;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
 };
 
-/* ---------------- Routes ---------------- */
-
 const AppRoutes: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <div>Loading...</div>;
 
   return (
     <Routes>
-      {/* Landing */}
-      <Route
-        path="/"
-        element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Index />
-        }
-      />
+      <Route path="/" element={isAuthenticated ? <Dashboard /> : <Index />} />
 
-      {/* Public */}
-      <Route path="/streak-test" element={<StreakTest />} />
+      <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+      <Route path="/register" element={<AuthRoute><Register /></AuthRoute>} />
 
-      {/* Auth */}
-      <Route
-        path="/login"
-        element={
-          <AuthRoute>
-            <Login />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <AuthRoute>
-            <Register />
-          </AuthRoute>
-        }
-      />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/leetcode" element={<ProtectedRoute><Leetcode /></ProtectedRoute>} />
+      <Route path="/duel-editor" element={<ProtectedRoute><CodeEditor /></ProtectedRoute>} />
+      <Route path="/challenge/:id" element={<ProtectedRoute><ChallengePage /></ProtectedRoute>} />
+      <Route path="/create-challenge" element={<ProtectedRoute><CreateChallenge /></ProtectedRoute>} />
+      <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-      {/* Protected */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/leetcode"
-        element={
-          <ProtectedRoute>
-            <Leetcode />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/duel-editor"
-        element={
-          <ProtectedRoute>
-            <CodeEditor />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/challenge/:id"
-        element={
-          <ProtectedRoute>
-            <ChallengePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/create-challenge"
-        element={
-          <ProtectedRoute>
-            <CreateChallenge />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/leaderboard"
-        element={
-          <ProtectedRoute>
-            <Leaderboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/join/:code"
-        element={
-          <ProtectedRoute>
-            <JoinByCode />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
 
-/* ---------------- App Root ---------------- */
-
-const App: React.FC = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner position="top-center" duration={2000} />
-
-            <BrowserRouter>
-              <CommandPalette />
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
-};
+const App: React.FC = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <CommandPalette />
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;

@@ -8,9 +8,7 @@ export interface User {
   avatar?: string;
   leetcodeUsername: string;
   createdAt?: string;
-  // user may belong to multiple challenges; store full member records
   memberships?: ChallengeMember[];
-  // challenges created/owned by this user
   ownedChallenges?: Challenge[];
 }
 
@@ -28,6 +26,8 @@ export interface Challenge {
   difficultyFilter?: string[];
   status?: "ACTIVE" | "PENDING" | "COMPLETED" | "CANCELLED";
   minSubmissionsPerDay?: number;
+  description?: string;
+  ownerId?: string;
 }
 
 export interface ChallengeMember {
@@ -35,7 +35,7 @@ export interface ChallengeMember {
   userName: string;
   avatar?: string;
   status: "completed" | "failed" | "pending";
-  joinedAt?: string;
+  joinedAt: string;
   streak?: number;
   totalPenalty?: number;
   dailyProgress?: DailyProgress[];
@@ -91,24 +91,17 @@ export type RawData = {
   dailyTarget?: number;
 };
 
-
 // ============================================
 // Streak & Consistency Tracking Types
 // ============================================
 
-/**
- * Activity log structure for streak persistence
- */
 export interface ActivityLog {
-  dates: string[]; // Array of dates in YYYY-MM-DD format
+  dates: string[];
   currentStreak: number;
   longestStreak: number;
   lastUpdated: string;
 }
 
-/**
- * Complete streak data with statistics
- */
 export interface StreakData {
   currentStreak: number;
   longestStreak: number;
@@ -120,9 +113,6 @@ export interface StreakData {
   isLoading: boolean;
 }
 
-/**
- * Activity statistics summary
- */
 export interface ActivityStats {
   currentStreak: number;
   longestStreak: number;
@@ -130,14 +120,14 @@ export interface ActivityStats {
   activeToday: boolean;
   totalActiveDays: number;
   dates: string[];
-=======
+}
+
 // LeetCode profile returned from the backend
 export interface LeetCodeProfile {
   username: string;
   streak: number;
   totalActiveDays: number;
   activeYears: number[];
-  // the calendar may come as a JSON string or object mapping dates to counts
   submissionCalendar: string | Record<string, number>;
 }
 
@@ -172,5 +162,4 @@ export interface DashboardResponse {
   };
   activeChallenges: Challenge[];
   recentActivity: ActivityData[];
-
 }

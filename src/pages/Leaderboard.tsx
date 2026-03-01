@@ -1,3 +1,4 @@
+// src/pages/Leaderboard.tsx
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, Trophy } from "lucide-react";
@@ -17,16 +18,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { LeaderboardEntry } from "@/types";
 
-// ✅ Centralized React Query hook — cached globally
 import { useGlobalLeaderboard, useLeaderboard } from "@/hooks/useLeaderboard";
 
 const Leaderboard: React.FC = () => {
   const { user } = useAuth();
 
-  // ✅ Single hook replaces useState + useEffect + loadLeaderboard + toast error handling
   const { data: leaderboardData = [], isLoading } = useGlobalLeaderboard();
 
-  // Client-side filtering and sorting state
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<
     "rank" | "totalSolved" | "currentStreak" | "penaltyAmount"
@@ -39,6 +37,7 @@ const Leaderboard: React.FC = () => {
     sortKey,
     sortOrder,
   );
+
   const topThree = processedLeaderboard.slice(0, 3);
 
   const totalSolved = useMemo(
@@ -54,8 +53,10 @@ const Leaderboard: React.FC = () => {
     () =>
       processedLeaderboard.length > 0
         ? Math.max(
-          ...processedLeaderboard.map((entry) => entry.currentStreak || 0),
-        )
+            ...processedLeaderboard.map(
+              (entry) => entry.currentStreak || 0,
+            ),
+          )
         : 0,
     [processedLeaderboard],
   );
@@ -116,8 +117,8 @@ const Leaderboard: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex items-center gap-2">
+            <Loader2 className="animate-spin" /> Loading leaderboard...
           </div>
         ) : (
           <>
@@ -159,6 +160,7 @@ const Leaderboard: React.FC = () => {
                   <p className="text-2xl font-semibold">{totalSolved}</p>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">
@@ -167,6 +169,7 @@ const Leaderboard: React.FC = () => {
                   <p className="text-2xl font-semibold">{longestStreak}</p>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground">
