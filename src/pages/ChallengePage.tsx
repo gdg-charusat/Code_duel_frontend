@@ -19,21 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-// ...existing code...
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-
-import { useErrorHandler } from "@/hooks/useErrorHandler";
-import { challengeApi, dashboardApi } from "@/lib/api";
-import { Challenge, ChartData, LeaderboardEntry } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
-import InviteDialog from "@/components/challenge/InviteDialog";
-import { Challenge } from "@/types";
-
 import InviteDialog from "@/components/challenge/InviteDialog";
 
 import { Challenge, ChartData, LeaderboardEntry } from "@/types";
-
 import { getErrorMessage } from "@/lib/utils";
 import { useRealTimeDuel } from "@/hooks/useRealTimeDuel";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,49 +50,18 @@ const ChallengePage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const errorHandler = useErrorHandler();
 
-  // ✅ Cached queries — no manual useState/useEffect/loadChallengeData
   const { data: challengeRaw, isLoading: challengeLoading, isError: challengeError } = useChallenge(id);
   const challenge = challengeRaw as ChallengeDetails | undefined;
   const { data: leaderboard = [], isLoading: leaderboardLoading, isError: leaderboardError } =
     useChallengeLeaderboard(id);
 
-  // ✅ Mutations with auto cache invalidation — no manual reload needed
   const joinMutation = useJoinChallenge();
   const activateMutation = useActivateChallenge();
 
   const isLoading = challengeLoading || leaderboardLoading;
-
-  // ...existing code...
-
-  const loadChallengeData = async () => {
-    try {
-      // ...your data loading logic here...
-      // Example:
-      // if (challengeResponse.success && challengeResponse.data) {
-      //   setChallenge(challengeResponse.data as ChallengeDetails);
-      // } else {
-      //   setHasError(true);
-      // }
-      // setLeaderboard(...);
-      // setChartData(...);
-    } catch (err) {
-      errorHandler(err, 'ChallengePage:loadChallengeData');
-      setHasError(true);
-      toast({
-        title: "Failed to load challenge",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const hasError = challengeError || leaderboardError;
 
-  // ✅ Invalidate queries on real-time update
   const handleRefresh = useCallback(() => {
     if (id) {
       queryClient.invalidateQueries({ queryKey: challengeKeys.detail(id) });
@@ -111,31 +71,17 @@ const ChallengePage: React.FC = () => {
 
   const { status: realTimeStatus } = useRealTimeDuel(id, handleRefresh);
 
-
-  useEffect(() => {
-    loadChallengeData();
-  }, [id]);
-  // Chart data placeholder (can be replaced with a React Query hook later)
   const chartData: ChartData[] = [];
+
   const handleJoinChallenge = async () => {
     if (!id) return;
     try {
-      const response = await challengeApi.join(id);
-      if (response.success) {
-        toast({
-          title: "Joined challenge!",
-          description: "You have successfully joined the challenge.",
-        });
-        await loadChallengeData();
-      } else {
-        toast({
-          title: "Failed to join challenge",
-          description: response.message || "Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      errorHandler(error, 'ChallengePage:handleJoinChallenge');
+      await joinMutation.mutateAsync(id);
+      toast({
+        title: "Joined challenge!",
+        description: "You have successfully joined the challenge.",
+      });
+    } catch (error: unknown) {
       toast({
         title: "Failed to join challenge",
         description: getErrorMessage(error),
