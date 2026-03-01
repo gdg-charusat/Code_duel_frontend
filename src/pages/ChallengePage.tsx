@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,14 +21,26 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+
 import { Challenge, LeaderboardEntry } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
+
+
+
+import InviteDialog from "@/components/challenge/InviteDialog";
+
+import { Challenge, ChartData, LeaderboardEntry } from "@/types";
+import { getErrorMessage } from "@/lib/utils";
+import { useRealTimeDuel } from "@/hooks/useRealTimeDuel";
+import { useQueryClient } from "@tanstack/react-query";
+
 
 import {
   useChallenge,
   useChallengeLeaderboard,
   useJoinChallenge,
   useActivateChallenge,
+  challengeKeys,
 } from "@/hooks/useChallenges";
 
 type ChallengeDetails = Challenge & {
@@ -37,6 +49,7 @@ type ChallengeDetails = Challenge & {
   visibility?: "PUBLIC" | "PRIVATE" | string;
 };
 
+
 /* ✅ FIXED TYPE — must match ProgressChart */
 type ChartData = {
   date: string;
@@ -44,22 +57,42 @@ type ChartData = {
   target: number;
 };
 
+
 const ChallengePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+
 
   const { data: challengeRaw, isLoading: challengeLoading } = useChallenge(id);
   const challenge = challengeRaw as ChallengeDetails | undefined;
 
   const { data: leaderboard = [], isLoading: leaderboardLoading } =
+
+  // ✅ Cached queries — no manual useState/useEffect/loadChallengeData
+  const { data: challengeRaw, isLoading: challengeLoading, isError: challengeError } = useChallenge(id);
+  const challenge = challengeRaw as ChallengeDetails | undefined;
+  const { data: leaderboard = [], isLoading: leaderboardLoading, isError: leaderboardError } =
+
     useChallengeLeaderboard(id);
 
   const joinMutation = useJoinChallenge();
   const activateMutation = useActivateChallenge();
 
   const isLoading = challengeLoading || leaderboardLoading;
+  const hasError = challengeError || leaderboardError;
+
+  // ✅ Invalidate queries on real-time update
+  const handleRefresh = useCallback(() => {
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: challengeKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: challengeKeys.leaderboard(id) });
+    }
+  }, [id, queryClient]);
+
+  const { status: realTimeStatus } = useRealTimeDuel(id, handleRefresh);
 
   /* ✅ SAFE DEFAULT DATA */
   const chartData: ChartData[] = [
@@ -107,7 +140,7 @@ const ChallengePage: React.FC = () => {
     if (challenge.difficultyFilter.length === 3) return "Any";
     if (challenge.difficultyFilter.length === 1)
       return challenge.difficultyFilter[0];
-    return "Mixed";
+    return challenge.difficultyFilter.join(", ");
   }, [challenge]);
 
   const daysRemaining = useMemo(() => {
@@ -116,7 +149,11 @@ const ChallengePage: React.FC = () => {
       0,
       Math.ceil(
         (new Date(challenge.endDate).getTime() - Date.now()) /
+
           (1000 * 60 * 60 * 24)
+
+        (1000 * 60 * 60 * 24)
+
       )
     );
   }, [challenge]);
@@ -128,15 +165,29 @@ const ChallengePage: React.FC = () => {
       Math.ceil(
         (new Date(challenge.endDate).getTime() -
           new Date(challenge.startDate).getTime()) /
+
           (1000 * 60 * 60 * 24)
+
+        (1000 * 60 * 60 * 24)
+
       )
     );
   }, [challenge]);
+
 
   const progress = Math.min(
     100,
     Math.max(0, Math.round(((totalDays - daysRemaining) / totalDays) * 100))
   );
+
+  const progress = useMemo(() => {
+    if (totalDays <= 0) return 0;
+    return Math.min(
+      100,
+      Math.max(0, Math.round(((totalDays - daysRemaining) / totalDays) * 100))
+    );
+  }, [totalDays, daysRemaining]);
+
 
   const isMember = useMemo(() => {
     if (!user) return false;
@@ -155,7 +206,7 @@ const ChallengePage: React.FC = () => {
     );
   }
 
-  if (!challenge) {
+  if (hasError || !challenge) {
     return (
       <Layout>
         <div className="text-center py-12">
@@ -175,15 +226,174 @@ const ChallengePage: React.FC = () => {
   return (
     <Layout>
       <div className="space-y-6">
+
         <Tabs defaultValue="members">
+
+        <Button variant="ghost" size="sm" asChild className="gap-2">
+          <Link to="/dashboard">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </Button>
+
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl font-bold">{challenge.name}</h1>
+              <Badge variant="outline">{difficultyDisplay}</Badge>
+              {challenge.status && (
+                <Badge variant="outline">{challenge.status}</Badge>
+              )}
+              <Badge
+                variant={realTimeStatus === "CONNECTED" ? "default" : "secondary"}
+                className={
+                  realTimeStatus === "CONNECTED"
+                    ? "bg-green-500 hover:bg-green-600 text-white"
+                    : ""
+                }
+              >
+                {realTimeStatus === "CONNECTED"
+                  ? "Live"
+                  : realTimeStatus === "POLLING"
+                    ? "Polling"
+                    : "Connecting..."}
+              </Badge>
+            </div>
+
+            <p className="text-muted-foreground">
+              {challenge.description || "No description provided."}
+            </p>
+
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  {new Date(challenge.startDate).toLocaleDateString()} -{" "}
+                  {new Date(challenge.endDate).toLocaleDateString()}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                <span>{daysRemaining} days left</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            {challenge.status === "PENDING" &&
+              challenge.ownerId === user?.id && (
+                <Button
+                  className="gap-2 gradient-primary"
+                  onClick={handleActivateChallenge}
+                  disabled={activateMutation.isPending}
+                >
+                  {activateMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlayCircle className="h-4 w-4" />
+                  )}
+                  Activate Challenge
+                </Button>
+              )}
+
+            {challenge.visibility === "PRIVATE" &&
+              challenge.ownerId === user?.id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setIsInviteDialogOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Invite Users
+                </Button>
+              )}
+
+            {!isMember && challenge.visibility !== "PRIVATE" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={handleJoinChallenge}
+                disabled={joinMutation.isPending}
+              >
+                {joinMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Users className="h-4 w-4" />
+                )}
+                Join Challenge
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Challenge Progress</span>
+              <span className="text-sm text-muted-foreground">
+                {Math.max(0, totalDays - daysRemaining)} of {totalDays} days
+              </span>
+            </div>
+            <Progress value={progress} className="h-3" />
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="members" className="w-full">
+
           <TabsList>
             <TabsTrigger value="members">Members</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
           </TabsList>
 
+
           <TabsContent value="progress">
             {/* ✅ Now type matches */}
             <ProgressChart data={chartData} title="Team Progress" />
+
+          <TabsContent value="members">
+            <Card>
+              <CardHeader>
+                <CardTitle>Leaderboard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {leaderboard.length > 0 ? (
+                  <div className="space-y-2">
+                    {leaderboard.map((member: LeaderboardEntry, index: number) => (
+                      <div
+                        key={member.userId || `member-${index}`}
+                        className="flex justify-between items-center p-3 border rounded-lg bg-card"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-muted-foreground">
+                            #{index + 1}
+                          </span>
+                          <span className="font-medium">{member.userName}</span>
+                        </div>
+                        <span className="font-mono font-bold text-destructive">
+                          ${member.penaltyAmount || 0}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    No members yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="progress">
+            <Card>
+              <CardContent className="pt-6">
+                <ProgressChart data={chartData} title="Team Progress" />
+              </CardContent>
+            </Card>
+
           </TabsContent>
         </Tabs>
       </div>

@@ -14,6 +14,7 @@ import CommandPalette from '@/components/common/CommandPalette';
 import CodeEditor from '@/components/CodeEditor';
 
 // Pages
+
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Login from '@/pages/Login';
@@ -30,6 +31,48 @@ const queryClient = new QueryClient();
 
 // Protected Route
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+
+import ChallengePage from "./pages/ChallengePage";
+import CreateChallenge from "./pages/CreateChallenge";
+import Leaderboard from "./pages/Leaderboard";
+import LeaderboardTest from "./pages/LeaderboardTest";
+
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
+import Leetcode from "./pages/Leetcode";
+import JoinByCode from "./pages/JoinByCode";
+import StreakTest from "./pages/StreakTest";
+
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,      // 2 minutes — avoid redundant refetches
+      gcTime: 10 * 60 * 1000,         // 10 minutes — keep cache for back-navigation
+      retry: 1,                        // Retry once on failure
+      refetchOnWindowFocus: true,      // Refresh data when user returns to tab
+    },
+  },
+});
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return <div>Loading...</div>;
@@ -55,6 +98,7 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
+
       <Route path="/" element={isAuthenticated ? <Dashboard /> : <Index />} />
 
       <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
@@ -68,6 +112,116 @@ const AppRoutes: React.FC = () => {
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Index />
+        }
+      />
+
+
+
+
+
+      {/* Streak Test Page (Public for easy testing) */}
+      <Route path="/streak-test" element={<StreakTest />} />
+
+      {/* Auth Routes */}
+
+
+
+
+
+      <Route
+        path="/login"
+        element={
+          <AuthRoute>
+            <Login />
+          </AuthRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <AuthRoute>
+            <Register />
+          </AuthRoute>
+        }
+      />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/leetcode"
+        element={
+          <ProtectedRoute>
+            <Leetcode />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/duel-editor"
+        element={
+          <ProtectedRoute>
+            <CodeEditor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/challenge/:id"
+        element={
+          <ProtectedRoute>
+            <ChallengePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/create-challenge"
+        element={
+          <ProtectedRoute>
+            <CreateChallenge />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route path="/leaderboard-test" element={<LeaderboardTest />} />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/join/:code"
+        element={
+          <ProtectedRoute>
+            <JoinByCode />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-all */}
 
       <Route path="*" element={<NotFound />} />
     </Routes>

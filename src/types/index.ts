@@ -15,12 +15,15 @@ export interface User {
 export interface Challenge {
   id: string;
   name: string;
+  description?: string;
   dailyTarget: number;
   difficulty: "easy" | "medium" | "hard" | "any";
   penaltyAmount?: number;
   startDate: string;
   endDate: string;
   createdBy: string;
+  ownerId?: string;
+  visibility?: string;
   members: ChallengeMember[];
   isActive: boolean;
   difficultyFilter?: string[];
@@ -36,9 +39,15 @@ export interface ChallengeMember {
   avatar?: string;
   status: "completed" | "failed" | "pending";
   joinedAt: string;
+
   streak?: number;
   totalPenalty?: number;
   dailyProgress?: DailyProgress[];
+
+  streak: number;
+  totalPenalty: number;
+  dailyProgress: DailyProgress[];
+
 }
 
 export interface DailyProgress {
@@ -55,6 +64,7 @@ export interface LeaderboardEntry {
   avatar?: string;
   totalSolved: number;
   currentStreak: number;
+  longestStreak?: number;
   missedDays: number;
   penaltyAmount: number;
 }
@@ -90,6 +100,73 @@ export type RawData = {
   target?: number;
   dailyTarget?: number;
 };
+
+
+// ============================================================================
+// GAMIFICATION TYPES
+// ============================================================================
+
+export type AchievementCategory =
+  | 'streak'
+  | 'problem_solving'
+  | 'challenge'
+  | 'difficulty'
+  | 'social'
+  | 'special';
+
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: AchievementCategory;
+  tier: AchievementTier;
+  points: number;
+  requirement: number;
+  unlockedAt?: string;
+  progress?: number;
+}
+
+export interface UserAchievement {
+  achievementId: string;
+  unlockedAt: string;
+  progress: number;
+}
+
+export type UserTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+
+export interface TierInfo {
+  tier: UserTier;
+  name: string;
+  minPoints: number;
+  maxPoints: number;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}
+
+export interface UserTierProgress {
+  currentTier: UserTier;
+  totalPoints: number;
+  currentTierInfo: TierInfo;
+  nextTierInfo: TierInfo | null;
+  pointsToNextTier: number;
+  progressPercentage: number;
+}
+
+export interface GamificationStats {
+  totalPoints: number;
+  currentTier: UserTier;
+  achievementsUnlocked: number;
+  totalAchievements: number;
+  recentAchievements: Achievement[];
+  nextAchievements: Achievement[];
+}
+
+
+
 
 // ============================================
 // Streak & Consistency Tracking Types
@@ -149,8 +226,8 @@ export interface UserSearchResult {
   name: string;
   email: string;
   username: string;
-  avatar?: string;
   leetcodeUsername?: string;
+  avatar?: string;
 }
 
 export interface DashboardResponse {
@@ -162,4 +239,57 @@ export interface DashboardResponse {
   };
   activeChallenges: Challenge[];
   recentActivity: ActivityData[];
+
 }
+
+}
+
+export interface LeaderboardMember {
+  userId: string;
+  userName?: string;
+  username?: string;
+  totalPenalty?: number;
+  status?: string;
+  avatar?: string;
+}
+
+export interface ChallengeResponse {
+  id: string;
+  name: string;
+  description: string;
+  minSubmissionsPerDay: number;
+  difficultyFilter: string[] | null;
+  uniqueProblemConstraint: boolean;
+  penaltyAmount: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+  ownerId: string;
+  createdAt: string;
+  members?: LeaderboardMember[];
+}
+
+export interface TodayStatusResponse {
+  date: string;
+  challenges: Challenge[];
+  summary: {
+    totalChallenges: number;
+    completed: number;
+    pending: number;
+    failed: number;
+  };
+}
+
+export interface DashboardStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalPenalties: number;
+  totalSubmissions: number;
+}
+
+export interface SessionStatus {
+  isValid: boolean;
+  expiresAt: string;
+}
+
+
